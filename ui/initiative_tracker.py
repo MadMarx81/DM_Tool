@@ -47,7 +47,7 @@ class Tooltip:
         label = tk.Label(
             tw, text=self.text, justify=tk.LEFT,
             background="#ffffe0", relief=tk.SOLID, borderwidth=1,
-            font=("Arial", "10", "normal")
+            font=("Papyrus", "10", "normal")
         )
         label.pack(ipadx=4, ipady=2)
         self.tipwindow = tw
@@ -59,39 +59,43 @@ class Tooltip:
 
 class InitiativeTracker(tk.Frame):
     def __init__(self, master, **kwargs):
-        super().__init__(master, **kwargs)
+        super().__init__(master, bg="#e6e2d3", **kwargs)
         self.entities = []
         self.build_ui()
 
     def build_ui(self):
-        frm_add = tk.Frame(self)
+        frm_add = tk.Frame(self, bg="#e6e2d3")
         frm_add.pack(fill="x", pady=10)
         # En-têtes
         for i, txt in enumerate(["Nom", "PV", "CA", "État", "Init"]):
-            tk.Label(frm_add, text=txt, font=("Arial", 10, "bold")).grid(row=0, column=i)
+            tk.Label(frm_add, text=txt, font=("Georgia", 10, "bold"), bg="#e6e2d3", fg="#5c4d3d").grid(row=0, column=i)
         # Champs
-        self.e_name = tk.Entry(frm_add, width=15)
+        self.e_name = tk.Entry(frm_add, width=15, bg="#f9f7f0")
         self.e_name.grid(row=1, column=0)
-        self.e_hp = tk.Entry(frm_add, width=5)
+        self.e_hp = tk.Entry(frm_add, width=5, bg="#f9f7f0")
         self.e_hp.grid(row=1, column=1)
-        self.e_ac = tk.Entry(frm_add, width=5)
+        self.e_ac = tk.Entry(frm_add, width=5, bg="#f9f7f0")
         self.e_ac.grid(row=1, column=2)
-        self.e_status = tk.Entry(frm_add, width=10)
+        self.e_status = tk.Entry(frm_add, width=10, bg="#f9f7f0")
         self.e_status.grid(row=1, column=3)
-        self.e_init = tk.Entry(frm_add, width=5)
+        self.e_init = tk.Entry(frm_add, width=5, bg="#f9f7f0")
         self.e_init.grid(row=1, column=4)
         # Boutons
-        b_roll = tk.Button(frm_add, text="🎲 Roll Init", command=self.roll_init)
+        b_roll = tk.Button(frm_add, text="🎲 Roll Init", command=self.roll_init, bg="#c9c2b8")
         b_roll.grid(row=1, column=5, padx=5)
         Tooltip(b_roll, "Jette 1d20 + mod DEX si fourni")
-        b_add = tk.Button(frm_add, text="➕ Ajouter", command=self.add_entity)
+        b_add = tk.Button(frm_add, text="➕ Ajouter", command=self.add_entity, bg="#c9c2b8")
         b_add.grid(row=1, column=6, padx=5)
         Tooltip(b_add, "Ajoute entité au tracker")
 
-        # Listbox
-        frm_list = tk.Frame(self)
+        # Liste avec en-têtes
+        frm_list = tk.Frame(self, bg="#e6e2d3")
         frm_list.pack(fill="both", expand=True, padx=10, pady=10)
-        self.lst = tk.Listbox(frm_list, font=("Consolas", 12))
+        titlebar = tk.Label(frm_list, text="Initiative  |  Nom            |  PV  |  CA  |  État",
+                            font=("Georgia", 10, "bold"), bg="#d6d1c4", anchor="w")
+        titlebar.pack(fill="x")
+
+        self.lst = tk.Listbox(frm_list, font=("Consolas", 12), bg="#fefcf5")
         self.lst.pack(side="left", fill="both", expand=True)
         self.lst.bind('<Double-1>', self.edit_selected)
         sb = tk.Scrollbar(frm_list, orient='vertical', command=self.lst.yview)
@@ -99,12 +103,17 @@ class InitiativeTracker(tk.Frame):
         self.lst.config(yscrollcommand=sb.set)
 
         # Contrôles
-        frm_ctrl = tk.Frame(self)
+        frm_ctrl = tk.Frame(self, bg="#e6e2d3")
         frm_ctrl.pack(fill='x', pady=5)
-        tk.Button(frm_ctrl, text="🗑️ Suppr", command=self.delete_entity).pack(side='left', padx=5)
-        tk.Button(frm_ctrl, text="🎲 Roll Sel", command=self.roll_selected).pack(side='left', padx=5)
-        tk.Button(frm_ctrl, text="➖ Dégâts", command=self.apply_damage).pack(side='left', padx=5)
-        tk.Button(frm_ctrl, text="➕ Soins", command=self.apply_heal).pack(side='left', padx=5)
+        for text, cmd in [
+            ("🗑️ Suppr", self.delete_entity),
+            ("🎲 Roll Sel", self.roll_selected),
+            ("➖ Dégâts", self.apply_damage),
+            ("➕ Soins", self.apply_heal)
+        ]:
+            btn = tk.Button(frm_ctrl, text=text, command=cmd, bg="#c9c2b8")
+            btn.pack(side='left', padx=5)
+
 
     def roll_init(self):
         self.e_init.delete(0, tk.END)
@@ -132,12 +141,14 @@ class InitiativeTracker(tk.Frame):
         ent = self._read_entry()
         if not ent:
             return
+        ent["icon"] = "🗡️ "
         self.entities.append(ent)
         self.clear_entries()
         self.refresh()
 
     def add_entity_obj(self, entity):
         # Fin de l'erreur AttributeError
+        entity["icon"] = entity.get("icon", "🐉")
         self.entities.append(entity)
         self.refresh()
 
@@ -229,7 +240,7 @@ class InitiativeTracker(tk.Frame):
         for i, e in enumerate(self.entities):
             self.lst.insert(
                 tk.END,
-                f"{e['init']:>3} • {e['name']:<12} HP:{e['hp']:<3} CA:{e['ac']:<2} [{e['status']}]"
+                f"{e['init']:>3} • {e.get('icon','')} {e['name']:<12} HP:{e['hp']:<3} CA:{e['ac']:<2} [{e['status']}]"
             )
             if e['hp'] < 1:
                 self.lst.itemconfig(i, fg='red')

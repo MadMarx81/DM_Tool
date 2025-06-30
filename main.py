@@ -13,13 +13,20 @@ def main():
 
     # Onglet Initiative
     tracker = InitiativeTracker(notebook)
-    notebook.add(tracker, text="Initiative")
+    notebook.add(tracker, text="🎲 Initiative")
 
     # Onglet Bestiaire, on lui passe le tracker pour ajout
     bestiary = BestiaryView(notebook, tracker=tracker)
-    notebook.add(bestiary, text="Bestiaire")
+    notebook.add(bestiary, text="🐉 Bestiaire")
+
+    # Onglet sorts
+    from ui.spellbook_view import SpellbookView
+
+    spellbook = SpellbookView(notebook)
+    notebook.add(spellbook, text="📖 Sorts")
 
     root.mainloop()
+
 
 if __name__ == '__main__':
     main()
