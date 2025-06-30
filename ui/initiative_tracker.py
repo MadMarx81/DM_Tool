@@ -30,16 +30,29 @@ class InitiativeTracker(tk.Frame):
         btn_add.grid(row=1, column=6, padx=5)
 
         # --- Section d'affichage ---
-        self.lst = tk.Listbox(self, font=("Consolas", 12))
-        self.lst.pack(fill="both", expand=True, padx=10, pady=10)
+        frm_list = tk.Frame(self)
+        frm_list.pack(fill="both", expand=True, padx=10, pady=10)
+
+        self.lst = tk.Listbox(frm_list, font=("Consolas", 12))
+        self.lst.pack(side="left", fill="both", expand=True)
+
+        # Barre de défilement
+        scrollbar = tk.Scrollbar(frm_list, orient="vertical", command=self.lst.yview)
+        scrollbar.pack(side="right", fill="y")
+        self.lst.config(yscrollcommand=scrollbar.set)
+
+        # Bouton de suppression
+        btn_delete = tk.Button(self, text="🗑️ Supprimer sélection", command=self.delete_entity)
+        btn_delete.pack(pady=5)
 
     def roll_init(self):
+        # Effacer l'ancien roll avant d'insérer le nouveau
+        self.e_init.delete(0, tk.END)
         try:
             mod = int(self.e_init.get())
         except ValueError:
             mod = 0
         roll = random.randint(1, 20) + mod
-        self.e_init.delete(0, tk.END)
         self.e_init.insert(0, str(roll))
 
     def add_entity(self):
@@ -48,7 +61,7 @@ class InitiativeTracker(tk.Frame):
             hp = int(self.e_hp.get())
             ac = int(self.e_ac.get())
         except ValueError:
-            return  # tu pourras ajouter un message d'erreur plus tard
+            return  # plus tard : afficher un message d'erreur
         status = self.e_status.get().strip()
         try:
             init = int(self.e_init.get())
@@ -56,13 +69,33 @@ class InitiativeTracker(tk.Frame):
             init = 0
 
         self.entities.append({
-            "name": name, "hp": hp, "ac": ac,
-            "status": status, "init": init
+            "name": name,
+            "hp": hp,
+            "ac": ac,
+            "status": status,
+            "init": init
         })
+        self.clear_entries()
         self.refresh_list()
 
+    def delete_entity(self):
+        # Supprime l'entité sélectionnée dans la liste
+        sel = self.lst.curselection()
+        if sel:
+            idx = sel[0]
+            del self.entities[idx]
+            self.refresh_list()
+
+    def clear_entries(self):
+        # Efface tous les champs d'entrée après ajout
+        self.e_name.delete(0, tk.END)
+        self.e_hp.delete(0, tk.END)
+        self.e_ac.delete(0, tk.END)
+        self.e_status.delete(0, tk.END)
+        self.e_init.delete(0, tk.END)
+
     def refresh_list(self):
-        # trie décroissant par init
+        # Trie décroissant par initiative
         self.entities.sort(key=lambda e: e["init"], reverse=True)
         self.lst.delete(0, tk.END)
         for e in self.entities:
