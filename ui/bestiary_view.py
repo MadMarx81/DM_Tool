@@ -40,7 +40,7 @@ class BestiaryView(tk.Frame):
         self.search_var.trace_add('write', self.on_search)
         tk.Entry(frm_search, textvariable=self.search_var).pack(side='left', fill='x', expand=True)
 
-        # Liste des monstres filtrés réduite en hauteur
+        # Liste des monstres filtrés
         frm_list = tk.Frame(self)
         frm_list.pack(fill='x', padx=10, pady=5)
         self.lst_monsters = tk.Listbox(frm_list, height=5)
@@ -95,6 +95,10 @@ class BestiaryView(tk.Frame):
             return
         name = self.filtered_names[sel[0]]
         data = self.monsters[name]
+
+        # Extraction CR
+        cr = data.get('cr', '0')
+
         # Extraction CA
         ac_data = data.get('ac')
         if isinstance(ac_data, list):
@@ -102,17 +106,31 @@ class BestiaryView(tk.Frame):
             ac = first.get('ac') if isinstance(first, dict) else first
         else:
             ac = ac_data or 0
+
         # Extraction HP
         hp_data = data.get('hp')
         if isinstance(hp_data, dict):
             hp = hp_data.get('average', 0)
         else:
             hp = hp_data or 0
-        entity = {"name": name, "hp": hp, "ac": ac, "status": "", "init": 0}
+
+        # Prépare l'entité avec challenge_rating
+        entity = {
+            "name": name,
+            "hp": hp,
+            "ac": ac,
+            "status": "",
+            "init": 0,
+            "is_monster": True,
+            "challenge_rating": cr
+        }
+
+        # Appelle la méthode d'ajout du tracker
         self.tracker.add_entity_obj(entity)
 
     def show_stats(self, name):
         data = self.monsters.get(name, {})
+
         # AC
         ac_data = data.get('ac')
         if isinstance(ac_data, list):
@@ -120,19 +138,31 @@ class BestiaryView(tk.Frame):
             ac = first.get('ac') if isinstance(first, dict) else first
         else:
             ac = ac_data
+
         # HP
         hp_data = data.get('hp')
         if isinstance(hp_data, dict):
             hp = hp_data.get('average', '')
         else:
             hp = hp_data
+
+        # CR
+        cr = data.get('cr', '')
+
         # Attaques/Actions
         attacks = []
         for key in ('attacks', 'action'):
             if key in data and isinstance(data[key], list):
                 attacks = data[key]
                 break
-        lines = [f"Nom: {name}", f"PV: {hp}", f"CA: {ac}", "Actions/Attaques:"]
+
+        lines = [
+            f"Nom: {name}",
+            f"CR: {cr}",
+            f"PV: {hp}",
+            f"CA: {ac}",
+            "Actions/Attaques:"
+        ]
         for atk in attacks:
             if isinstance(atk, dict):
                 title = atk.get('name', '')
@@ -141,6 +171,7 @@ class BestiaryView(tk.Frame):
                 lines.append(f"  - {title}: {detail}")
             else:
                 lines.append(f"  - {atk}")
+
         display = "\n".join(lines)
         self.txt.config(state='normal')
         self.txt.delete('1.0', tk.END)

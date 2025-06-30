@@ -3,6 +3,10 @@ from tkinter import ttk
 from ui.initiative_tracker import InitiativeTracker
 from ui.bestiary_view import BestiaryView
 from ui.notes_view import NotesView
+from ui.spellbook_view import SpellbookView
+from ui.calculators_view import CalculatorsView
+from ui.party_view import PartyView
+
 
 def main():
     root = tk.Tk()
@@ -20,18 +24,22 @@ def main():
     bestiary = BestiaryView(notebook, tracker=tracker)
     notebook.add(bestiary, text="🐉 Bestiaire")
 
-    # Onglet sorts
-    from ui.spellbook_view import SpellbookView
-
-    # Ajout dans ton main
+    # Onglet Notes
     notes = NotesView(notebook)
     notebook.add(notes, text="📓 Notes")
 
+    # Onglet Sorts
     spellbook = SpellbookView(notebook)
     notebook.add(spellbook, text="📖 Sorts")
 
-    root.mainloop()
+    # Onglet Calculs — **UNIQUEMENT** avec le tracker
+    calculators = CalculatorsView(notebook, tracker=tracker)
+    notebook.add(calculators, text="🧮 Calculs")
 
+    party = PartyView(notebook, tracker=tracker, xp_calculator=calculators)
+    notebook.add(party, text="👥 Joueurs")
+
+    root.mainloop()
 
 if __name__ == '__main__':
     main()

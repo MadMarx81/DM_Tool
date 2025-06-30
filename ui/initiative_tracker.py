@@ -60,16 +60,19 @@ class Tooltip:
 class InitiativeTracker(tk.Frame):
     def __init__(self, master, **kwargs):
         super().__init__(master, bg="#e6e2d3", **kwargs)
-        self.entities = []
+        self.entities = []  # Liste d'entités (PJ et monstres)
         self.build_ui()
 
     def build_ui(self):
+        # Cadre d'ajout
         frm_add = tk.Frame(self, bg="#e6e2d3")
         frm_add.pack(fill="x", pady=10)
+
         # En-têtes
         for i, txt in enumerate(["Nom", "PV", "CA", "État", "Init"]):
             tk.Label(frm_add, text=txt, font=("Georgia", 10, "bold"), bg="#e6e2d3", fg="#5c4d3d").grid(row=0, column=i)
-        # Champs
+
+        # Champs de saisie
         self.e_name = tk.Entry(frm_add, width=15, bg="#f9f7f0")
         self.e_name.grid(row=1, column=0)
         self.e_hp = tk.Entry(frm_add, width=5, bg="#f9f7f0")
@@ -80,6 +83,7 @@ class InitiativeTracker(tk.Frame):
         self.e_status.grid(row=1, column=3)
         self.e_init = tk.Entry(frm_add, width=5, bg="#f9f7f0")
         self.e_init.grid(row=1, column=4)
+
         # Boutons
         b_roll = tk.Button(frm_add, text="🎲 Roll Init", command=self.roll_init, bg="#c9c2b8")
         b_roll.grid(row=1, column=5, padx=5)
@@ -88,10 +92,10 @@ class InitiativeTracker(tk.Frame):
         b_add.grid(row=1, column=6, padx=5)
         Tooltip(b_add, "Ajoute entité au tracker")
 
-        # Liste avec en-têtes
+        # Affichage du tracker
         frm_list = tk.Frame(self, bg="#e6e2d3")
         frm_list.pack(fill="both", expand=True, padx=10, pady=10)
-        titlebar = tk.Label(frm_list, text="Initiative  |  Nom            |  PV  |  CA  |  État",
+        titlebar = tk.Label(frm_list, text="Init  |  Nom            |  PV  |  CA  |  État  | CR",
                             font=("Georgia", 10, "bold"), bg="#d6d1c4", anchor="w")
         titlebar.pack(fill="x")
 
@@ -102,7 +106,7 @@ class InitiativeTracker(tk.Frame):
         sb.pack(side='right', fill='y')
         self.lst.config(yscrollcommand=sb.set)
 
-        # Contrôles
+        # Contrôles bas
         frm_ctrl = tk.Frame(self, bg="#e6e2d3")
         frm_ctrl.pack(fill='x', pady=5)
         for text, cmd in [
@@ -113,7 +117,6 @@ class InitiativeTracker(tk.Frame):
         ]:
             btn = tk.Button(frm_ctrl, text=text, command=cmd, bg="#c9c2b8")
             btn.pack(side='left', padx=5)
-
 
     def roll_init(self):
         self.e_init.delete(0, tk.END)
@@ -138,17 +141,28 @@ class InitiativeTracker(tk.Frame):
         return {"name": name, "hp": hp, "ac": ac, "status": status, "init": init}
 
     def add_entity(self):
+        """Ajoute une nouvelle entité (PJ)."""
         ent = self._read_entry()
         if not ent:
             return
-        ent["icon"] = "🗡️ "
+        ent.update({
+            "icon": "🧑‍💼",
+            "is_monster": False,
+            "challenge_rating": "0",
+            "dex_mod": 0
+        })
         self.entities.append(ent)
         self.clear_entries()
         self.refresh()
 
     def add_entity_obj(self, entity):
-        # Fin de l'erreur AttributeError
-        entity["icon"] = entity.get("icon", "🐉")
+        """Importe une entité (monstre ou PJ) depuis un dict externe."""
+        entity.setdefault("icon", "🐉" if entity.get("is_monster") else "🧑‍💼")
+        entity.setdefault("status", "")
+        entity.setdefault("init", 0)
+        entity.setdefault("is_monster", False)
+        entity.setdefault("challenge_rating", "0")
+        entity.setdefault("dex_mod", 0)
         self.entities.append(entity)
         self.refresh()
 
@@ -176,7 +190,7 @@ class InitiativeTracker(tk.Frame):
         if amt is None:
             return
         idx = sel[0]
-        self.entities[idx]['hp'] -= amt  # PV peuvent devenir négatifs
+        self.entities[idx]['hp'] -= amt
         self.refresh()
 
     def apply_heal(self):
@@ -196,11 +210,9 @@ class InitiativeTracker(tk.Frame):
             return
         idx = sel[0]
         ent = self.entities[idx]
-        # Sélection champ
         field = simpledialog.askstring("Modifier","Champ (name,hp,init,status):", initialvalue="status")
         if not field or field not in ('name','hp','init','status'):
             return
-        # Status avec Combobox
         if field == 'status':
             dlg = tk.Toplevel(self)
             dlg.title("Choisir état")
@@ -217,14 +229,12 @@ class InitiativeTracker(tk.Frame):
             dlg.grab_set()
             self.wait_window(dlg)
             return
-        # Numérique
         if field in ('hp','init'):
             val = simpledialog.askinteger("Modifier", f"Nouvelle valeur {field}:", initialvalue=ent[field], minvalue=0)
             if val is not None:
                 ent[field] = val
                 self.refresh()
             return
-        # Name
         val = simpledialog.askstring("Modifier Nom", "Nouveau nom:", initialvalue=ent['name'])
         if val:
             ent['name'] = val
@@ -235,12 +245,18 @@ class InitiativeTracker(tk.Frame):
             w.delete(0, tk.END)
 
     def refresh(self):
+        # Tri par initiative décroissante
         self.entities.sort(key=lambda e: e.get('init', 0), reverse=True)
         self.lst.delete(0, tk.END)
         for i, e in enumerate(self.entities):
-            self.lst.insert(
-                tk.END,
-                f"{e['init']:>3} • {e.get('icon','')} {e['name']:<12} HP:{e['hp']:<3} CA:{e['ac']:<2} [{e['status']}]"
+            icon = e.get('icon', '🐉' if e.get('is_monster') else '🧑‍💼')
+            line = (
+                f"{e.get('init',0):>3} • {icon} {e['name']:<12} "
+                f"HP:{e['hp']:<3} CA:{e['ac']:<2} [{e.get('status','')}]"
             )
+            if e.get('is_monster'):
+                line += f"  (CR {e.get('challenge_rating','')})"
+            self.lst.insert(tk.END, line)
             if e['hp'] < 1:
                 self.lst.itemconfig(i, fg='red')
+
