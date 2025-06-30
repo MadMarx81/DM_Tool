@@ -1,0 +1,8 @@
+{
+  "name": "Gobelin",
+  "hp": 7,
+  "ac": 15,
+  "attacks": [
+    {"name": "Dague", "damage": "1d4+2"}
+  ]
+}
