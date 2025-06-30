@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from ui.initiative_tracker import InitiativeTracker
 from ui.bestiary_view import BestiaryView
+from ui.notes_view import NotesView
 
 def main():
     root = tk.Tk()
@@ -21,6 +22,10 @@ def main():
 
     # Onglet sorts
     from ui.spellbook_view import SpellbookView
+
+    # Ajout dans ton main
+    notes = NotesView(notebook)
+    notebook.add(notes, text="📓 Notes")
 
     spellbook = SpellbookView(notebook)
     notebook.add(spellbook, text="📖 Sorts")
