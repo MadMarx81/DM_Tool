@@ -1,0 +1,16 @@
+{
+  "name": "Duldain",
+  "hp_max": 14,
+  "hp_current": 14,
+  "ac": 14,
+  "init_mod": 1,
+  "dex_mod": 1,
+  "str": 14,
+  "dex": 14,
+  "con": 1,
+  "int": 4,
+  "wis": 14,
+  "cha": 1,
+  "status": "",
+  "xp": 935.0
+}

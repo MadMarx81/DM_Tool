@@ -1,0 +1,7 @@
+[Test manuel] Combat fictif terminé à 20:21:01
+[01/07/2025 20:29:02] Combat terminé : Ghoul vaincus — 200 XP distribués entre Duldain
+[01/07/2025 20:29:03] Combat terminé : Ghoul vaincus — 200 XP distribués entre Duldain
+[01/07/2025 20:29:03] Combat terminé : Ghoul vaincus — 200 XP distribués entre Duldain
+[01/07/2025 20:29:49] Combat terminé :  vaincus — 0 XP distribués entre 
+[01/07/2025 20:30:35] Combat terminé : Ghoul vaincus — 200 XP distribués entre Rakkenor
+[01/07/2025 20:32:39] Combat terminé : Ghoul vaincus — 200 XP distribués entre Duldain, Rakkenor

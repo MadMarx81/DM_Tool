@@ -4,28 +4,29 @@ from ui.currency_converter import CurrencyConverter
 from ui.travel_calculator import TravelCalculator
 from ui.xp_calculator import XPCombatCalculator
 
-class CalculatorsView(tk.Frame):
-    def __init__(self, parent, tracker):
-        super().__init__(parent, bg="#e6e2d3")
+class CalculatorsView(ttk.Frame):
+    def __init__(self, parent, tracker=None):
+        super().__init__(parent)
         self.tracker = tracker
 
-        tabs = ttk.Notebook(self)
-        tabs.pack(fill="both", expand=True, padx=5, pady=5)
+        # Création d'un notebook interne pour les sous-onglets des calculateurs
+        self.tabs = ttk.Notebook(self)
+        self.tabs.pack(fill="both", expand=True, padx=10, pady=10)
 
         # Onglet Convertisseur de devises
-        frame_currency = tk.Frame(tabs, bg="#e6e2d3")
+        frame_currency = ttk.Frame(self.tabs)
         conv = CurrencyConverter(frame_currency)
         conv.pack(fill="both", expand=True)
-        tabs.add(frame_currency, text="💰 Devises")
+        self.tabs.add(frame_currency, text="💰 Devises")
 
         # Onglet Calcul de voyage
-        frame_travel = tk.Frame(tabs, bg="#e6e2d3")
+        frame_travel = ttk.Frame(self.tabs)
         travel = TravelCalculator(frame_travel)
         travel.pack(fill="both", expand=True)
-        tabs.add(frame_travel, text="🚶 Voyage")
+        self.tabs.add(frame_travel, text="🚶 Voyage")
 
         # Onglet XP Combat
-        frame_xp = tk.Frame(tabs, bg="#e6e2d3")
-        xp = XPCombatCalculator(frame_xp, tracker=self.tracker)
-        xp.pack(fill="both", expand=True)
-        tabs.add(frame_xp, text="🏆 XP Combat")
+        frame_xp = ttk.Frame(self.tabs)
+        self.xp_calculator = XPCombatCalculator(frame_xp, tracker=self.tracker)
+        self.xp_calculator.pack(fill="both", expand=True)
+        self.tabs.add(frame_xp, text="🏆 XP Combat")
