@@ -24,7 +24,7 @@ class CalculatorsView(ttk.Frame):
 
         # Onglet Calcul de voyage
         frame_travel = ttk.Frame(self.tabs)
-        travel = TravelCalculator(frame_travel)
+        travel = TravelCalculator(frame_travel, system)
         travel.pack(fill="both", expand=True)
         self.tabs.add(frame_travel, text="🚶 Voyage")
 

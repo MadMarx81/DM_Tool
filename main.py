@@ -14,7 +14,6 @@ from ui.calculators_view import CalculatorsView
 from ui.party_view import PartyView
 from ui.combat_log_view import CombatLogView
 from ui.quest_journal_view import QuestJournalView
-from ui.custom_grid_view import CustomGridViewPaned
 
 class MainApp(tk.Tk):
     def __init__(self, systems):
@@ -30,8 +29,7 @@ class MainApp(tk.Tk):
         selector_frame = ttk.Frame(self, padding=5)
         selector_frame.grid(row=0, column=0, sticky="ew")
         selector_frame.columnconfigure(1, weight=1)
-        ttk.Label(selector_frame, text="Système :", style="Custom.TLabel")\
-            .grid(row=0, column=0, padx=(0,5))
+        ttk.Label(selector_frame, text="Système :", style="Custom.TLabel").grid(row=0, column=0, padx=(0,5))
         self.system_selector = ttk.Combobox(
             selector_frame,
             textvariable=self.current_system_var,
@@ -53,38 +51,39 @@ class MainApp(tk.Tk):
         self._build_tabs(self.container, initial_system)
 
     def _build_tabs(self, parent, system):
-        # Détruit l’ancien if any
+        # Détruit l’ancien notebook s'il existait
         if hasattr(self, 'notebook'):
             self.notebook.destroy()
 
         self.notebook = ttk.Notebook(parent)
         self.notebook.pack(fill='both', expand=True)
 
-        # --- Onglets ---
+        # 🎲 Initiative
         tracker = InitiativeTracker(self.notebook, system=system)
         self.notebook.add(tracker, text="🎲 Initiative")
 
+        # 🐉 Bestiaire
         bestiary = BestiaryView(self.notebook, tracker=tracker, system=system)
         self.notebook.add(bestiary, text="🐉 Bestiaire")
 
-        # On passe maintenant `system=system` à NotesView
+        # 📓 Notes
         notes = NotesView(self.notebook, system=system)
         self.notebook.add(notes, text="📓 Notes")
 
+        # 📖 Sorts
         spellbook = SpellbookView(self.notebook, system=system)
         self.notebook.add(spellbook, text="📖 Sorts")
 
-        calculators = CalculatorsView(
-            self.notebook,
-            tracker=tracker,
-            system=system,
-            party_view=None
-        )
+        # 🧮 Calculs
+        calculators = CalculatorsView(self.notebook, tracker=tracker, system=system, party_view=None)
         self.notebook.add(calculators, text="🧮 Calculs")
 
+        # 📖 Journal de combat
         combat_log = CombatLogView(self.notebook)
         self.notebook.add(combat_log, text="📖 Journal")
+        combat_log.set_system(system)
 
+        # 👥 Joueurs
         party = PartyView(
             self.notebook,
             tracker=tracker,
@@ -93,9 +92,11 @@ class MainApp(tk.Tk):
             system=system
         )
         self.notebook.add(party, text="👥 Joueurs")
+
+        # Lier party_view au calculateur d'XP
         calculators.xp_calculator.party_view = party
 
-        # Et idem pour QuestJournalView
+        # 🗺️ Quêtes
         quests = QuestJournalView(self.notebook, system=system)
         self.notebook.add(quests, text="🗺️ Quêtes")
 
@@ -104,9 +105,7 @@ class MainApp(tk.Tk):
         system = self.systems[name]
         self._build_tabs(self.container, system)
 
-
 if __name__ == '__main__':
-    # Instanciation des moteurs disponibles
     systems = {
         "D&D 5e": DnD5eSystem(),
         "Starfinder": StarfinderSystem(),

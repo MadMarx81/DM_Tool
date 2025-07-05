@@ -2,27 +2,34 @@
 from abc import ABC, abstractmethod
 
 class GameSystem(ABC):
-    """Interface abstraite pour un moteur de JDR (initiative, XP, niveaux, etc.)."""
-
     @abstractmethod
     def name(self) -> str:
-        """Identifiant unique du système (ex. 'dnd5e')."""
-        pass
+        ...
 
     @abstractmethod
     def initiative(self, actor: dict) -> int:
-        """Calcule le jet d’initiative d’un acteur."""
-        pass
+        ...
 
     @abstractmethod
     def xp_for_cr(self, cr: str) -> int:
-        """Retourne l’XP attribuée pour un monstre de CR donné."""
-        pass
+        ...
 
     @abstractmethod
     def compute_level(self, xp: int) -> tuple[int,int]:
+        ...
+
+    # ← Ajoutez ces méthodes génériques pour la partie voyage
+    @abstractmethod
+    def distance_units(self) -> str:
         """
-        Retourne (niveau, xp_requise_pour_niveau_suivant)
-        selon les seuils du système.
+        Renvoie l’unité de distance utilisée par le système (ex: 'km', 'mi', 'ft').
+        """
+        pass
+
+    @abstractmethod
+    def daily_speeds(self) -> dict[str, float]:
+        """
+        Retourne un dict {mode: vitesse_en_unités_par_jour}.
+        Exemple D&D 5e : {'normal': 24, 'rapide': 30, 'lente': 18}
         """
         pass

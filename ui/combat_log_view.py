@@ -1,61 +1,44 @@
-#!/usr/bin/env python3
-
 import os
 import tkinter as tk
 from tkinter import ttk
-from datetime import datetime
-from theme import setup_styles
 
 class CombatLogView(ttk.Frame):
-    """
-    Journal des combats, écrit dans data/<system>/combat_log.txt
-    """
     def __init__(self, parent, system=None, **kwargs):
-        """
-        :param system: GameSystem pour déterminer le dossier de log
-        """
-        setup_styles()
-        super().__init__(parent, style="Custom.TFrame", padding=10, **kwargs)
+        super().__init__(parent, **kwargs)
+        self.system = None
+        self.log_path = None
+
+        self.text = tk.Text(self, bg="#f9f7f0", fg="#5c4d3d", font=("Consolas", 11), state='disabled')
+        self.text.pack(fill='both', expand=True)
+
+        if system is not None:
+            self.set_system(system)
+
+    def set_system(self, system):
+        # Met à jour le système et recharge le log
         self.system = system
-        base = system.name() if system else "dnd5e"
-        self.log_file = os.path.join("data", base, "combat_log.txt")
-        os.makedirs(os.path.dirname(self.log_file), exist_ok=True)
+        system_name = system.name() if callable(getattr(system, 'name', None)) else str(system)
+        base_dir = os.path.join("data", system_name)
+        os.makedirs(base_dir, exist_ok=True)
+        self.log_path = os.path.join(base_dir, "combat_log.txt")
+        self.reload_log()
 
-        ttk.Label(
-            self, text="📖 Journal des combats", style="Custom.Heading"
-        ).pack(pady=5)
+    def reload_log(self):
+        self.text.config(state='normal')
+        self.text.delete('1.0', 'end')
+        if self.log_path and os.path.exists(self.log_path):
+            with open(self.log_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            self.text.insert('end', content)
+        self.text.config(state='disabled')
 
-        self.text = tk.Text(
-            self, wrap="word", state="disabled",
-            bg="#1e1e1e", fg="#e0e0e0", font=("Consolas",10), relief="flat"
-        )
-        self.text.pack(fill="both", expand=True)
-
-        self.refresh_log()
-        self.after(3000, self.auto_refresh)
-
-    def add_log(self, message):
-        """Ajoute un message au journal et met à jour l'affichage"""
-        ts = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-        line = f"[{ts}] {message}"
-        with open(self.log_file, "a", encoding="utf-8") as f:
-            f.write(line + "\n")
-        self.refresh_log()
-
-    def refresh_log(self):
-        """Recharge et affiche le journal, ordre inverse (plus récent en haut)"""
-        self.text.config(state="normal")
-        self.text.delete("1.0", tk.END)
-        if os.path.exists(self.log_file):
-            with open(self.log_file, "r", encoding="utf-8") as f:
-                lines = f.read().splitlines()
-            for line in reversed(lines):
-                self.text.insert("end", line + "\n")
-        else:
-            self.text.insert("end", "Aucun combat enregistré.\n")
-        self.text.config(state="disabled")
-
-    def auto_refresh(self):
-        """Rafraîchit périodiquement"""
-        self.refresh_log()
-        self.after(3000, self.auto_refresh)
+    def append_log(self, message):
+        # Exemple fonction pour ajouter un message et sauvegarder dans le fichier
+        if not self.log_path:
+            return
+        with open(self.log_path, 'a', encoding='utf-8') as f:
+            f.write(message + "\n")
+        self.text.config(state='normal')
+        self.text.insert('end', message + "\n")
+        self.text.config(state='disabled')
+        self.text.see('end')
