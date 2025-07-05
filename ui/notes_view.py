@@ -15,7 +15,8 @@ class NotesView(ttk.Frame):
         setup_styles()
         super().__init__(parent, style="Custom.TFrame", **kwargs)
         self.system = system
-        base = system.name() if system else "dnd5e"
+        # Utiliser system.name() (méthode) pour obtenir la clé du système
+        base = system.name() if system and callable(getattr(system, 'name', None)) else "dnd5e"
         self.notes_dir = os.path.join("data", base, "notes")
         os.makedirs(self.notes_dir, exist_ok=True)
 

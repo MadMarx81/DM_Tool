@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import os
 import json
 import tkinter as tk
@@ -121,7 +123,6 @@ class QuestJournalView(ttk.Frame):
                 self.listbox.itemconfig(idx, fg=color)
             except:
                 continue
-        # clear form
         if not self.listbox.curselection():
             self.clear_form()
 
@@ -151,13 +152,11 @@ class QuestJournalView(ttk.Frame):
             messagebox.showerror("Erreur", f"Impossible de charger : {e}")
             return
         self.current = name
-        # form
         for key, var in self.vars.items():
             var.set(data.get(key, ''))
         for key, txt in self.texts.items():
             txt.delete('1.0', tk.END)
             txt.insert('1.0', data.get(key, ''))
-        # preview
         text = (
             f"Nom: {data.get('name','')}\n"
             f"Donneur: {data.get('giver','')}\n"

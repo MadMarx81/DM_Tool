@@ -3,7 +3,6 @@
 import tkinter as tk
 from tkinter import ttk
 from systems.dnd5e import DnD5eSystem
-# Importer d'autres systèmes si disponibles
 from systems.starfinder import StarfinderSystem
 # from systems.shadowrun import ShadowrunSystem
 
@@ -23,16 +22,16 @@ class MainApp(tk.Tk):
         self.title("DM Tool – Tableau de bord")
         self.geometry("1920x1080")
 
-        # Stocke les systèmes disponibles
+        # 1️⃣ Stocke les systèmes disponibles
         self.systems = systems  # dict: {"Nom affiché": instance_system}
-        # Variable pour le choix courant
         self.current_system_var = tk.StringVar(value=list(systems.keys())[0])
 
-        # Sélecteur de système en haut
+        # 2️⃣ Sélecteur de système
         selector_frame = ttk.Frame(self, padding=5)
         selector_frame.grid(row=0, column=0, sticky="ew")
         selector_frame.columnconfigure(1, weight=1)
-        ttk.Label(selector_frame, text="Système :", style="Custom.TLabel").grid(row=0, column=0, padx=(0,5))
+        ttk.Label(selector_frame, text="Système :", style="Custom.TLabel")\
+            .grid(row=0, column=0, padx=(0,5))
         self.system_selector = ttk.Combobox(
             selector_frame,
             textvariable=self.current_system_var,
@@ -43,32 +42,33 @@ class MainApp(tk.Tk):
         self.system_selector.grid(row=0, column=1, sticky="ew")
         self.system_selector.bind("<<ComboboxSelected>>", self._on_system_change)
 
-        # Conteneur pour les onglets
+        # 3️⃣ Conteneur principal pour les onglets
         self.container = ttk.Frame(self)
         self.container.grid(row=1, column=0, sticky="nsew")
         self.rowconfigure(1, weight=1)
         self.columnconfigure(0, weight=1)
 
-        # Construire les onglets pour le système initial
+        # 4️⃣ Initialise les onglets avec le premier système
         initial_system = self.systems[self.current_system_var.get()]
         self._build_tabs(self.container, initial_system)
 
     def _build_tabs(self, parent, system):
-        # Détruit l'ancien notebook s'il existait
+        # Détruit l’ancien if any
         if hasattr(self, 'notebook'):
             self.notebook.destroy()
 
         self.notebook = ttk.Notebook(parent)
         self.notebook.pack(fill='both', expand=True)
 
-        # Onglets
+        # --- Onglets ---
         tracker = InitiativeTracker(self.notebook, system=system)
         self.notebook.add(tracker, text="🎲 Initiative")
 
         bestiary = BestiaryView(self.notebook, tracker=tracker, system=system)
         self.notebook.add(bestiary, text="🐉 Bestiaire")
 
-        notes = NotesView(self.notebook)
+        # On passe maintenant `system=system` à NotesView
+        notes = NotesView(self.notebook, system=system)
         self.notebook.add(notes, text="📓 Notes")
 
         spellbook = SpellbookView(self.notebook, system=system)
@@ -93,10 +93,10 @@ class MainApp(tk.Tk):
             system=system
         )
         self.notebook.add(party, text="👥 Joueurs")
-        # Lie la vue Party à l'XP Calculator
         calculators.xp_calculator.party_view = party
 
-        quests = QuestJournalView(self.notebook)
+        # Et idem pour QuestJournalView
+        quests = QuestJournalView(self.notebook, system=system)
         self.notebook.add(quests, text="🗺️ Quêtes")
 
     def _on_system_change(self, event=None):
@@ -104,10 +104,11 @@ class MainApp(tk.Tk):
         system = self.systems[name]
         self._build_tabs(self.container, system)
 
+
 if __name__ == '__main__':
-    # Instancier les systèmes de jeu disponibles
+    # Instanciation des moteurs disponibles
     systems = {
-        "D&D 5e": DnD5eSystem(),
+        "D&D 5e": DnD5eSystem(),
         "Starfinder": StarfinderSystem(),
         # "Shadowrun": ShadowrunSystem(),
     }
