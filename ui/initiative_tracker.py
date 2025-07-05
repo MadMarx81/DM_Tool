@@ -1,12 +1,5 @@
 import tkinter as tk
 from tkinter import simpledialog, ttk
-import random
-
-DND_STATES = [
-    "Aveuglé", "Étourdi", "Empoisonné", "Paralysé",
-    "Pétrifié", "Enflammé", "Gelé", "Inconscient",
-    "Charmé", "Effrayé", "Renversé", "Restrained"
-]
 
 class Tooltip:
     """Ajoute un tooltip à un widget Tkinter."""
@@ -19,95 +12,80 @@ class Tooltip:
         widget.bind('<Enter>', self.enter)
         widget.bind('<Leave>', self.leave)
 
-    def enter(self, event=None):
-        self.schedule()
-
-    def leave(self, event=None):
-        self.unschedule()
-        self.hidetip()
-
-    def schedule(self):
-        self.unschedule()
-        self.id = self.widget.after(self.delay, self.showtip)
-
+    def enter(self, event=None): self.schedule()
+    def leave(self, event=None): self.unschedule(); self.hidetip()
+    def schedule(self): self.unschedule(); self.id = self.widget.after(self.delay, self.showtip)
     def unschedule(self):
         if self.id:
             self.widget.after_cancel(self.id)
             self.id = None
-
     def showtip(self):
-        if self.tipwindow or not self.text:
-            return
+        if self.tipwindow or not self.text: return
         x, y, cx, cy = self.widget.bbox("insert")
         x += self.widget.winfo_rootx() + 25
         y += cy + self.widget.winfo_rooty() + 25
         tw = tk.Toplevel(self.widget)
         tw.wm_overrideredirect(True)
         tw.wm_geometry(f"+{x}+{y}")
-        label = tk.Label(
+        label = ttk.Label(
             tw, text=self.text, justify=tk.LEFT,
             background="#ffffe0", relief=tk.SOLID, borderwidth=1,
             font=("Papyrus", "10", "normal")
         )
         label.pack(ipadx=4, ipady=2)
         self.tipwindow = tw
-
     def hidetip(self):
         if self.tipwindow:
             self.tipwindow.destroy()
             self.tipwindow = None
 
-class InitiativeTracker(tk.Frame):
-    def __init__(self, master, **kwargs):
-        super().__init__(master, bg="#e6e2d3", **kwargs)
-        self.entities = []  # Liste d'entités (PJ et monstres)
+class InitiativeTracker(ttk.Frame):
+    def __init__(self, master, system=None, **kwargs):
+        super().__init__(master, **kwargs)
+        self.system = system
+        self.entities = []
         self.build_ui()
 
     def build_ui(self):
-        # Cadre d'ajout
-        frm_add = tk.Frame(self, bg="#e6e2d3")
+        frm_add = ttk.Frame(self)
         frm_add.pack(fill="x", pady=10)
 
-        # En-têtes
         for i, txt in enumerate(["Nom", "PV", "CA", "État", "Init"]):
-            tk.Label(frm_add, text=txt, font=("Georgia", 10, "bold"), bg="#e6e2d3", fg="#5c4d3d").grid(row=0, column=i)
+            ttk.Label(frm_add, text=txt).grid(row=0, column=i)
 
-        # Champs de saisie
-        self.e_name = tk.Entry(frm_add, width=15, bg="#f9f7f0")
-        self.e_name.grid(row=1, column=0)
-        self.e_hp = tk.Entry(frm_add, width=5, bg="#f9f7f0")
-        self.e_hp.grid(row=1, column=1)
-        self.e_ac = tk.Entry(frm_add, width=5, bg="#f9f7f0")
-        self.e_ac.grid(row=1, column=2)
-        self.e_status = tk.Entry(frm_add, width=10, bg="#f9f7f0")
-        self.e_status.grid(row=1, column=3)
-        self.e_init = tk.Entry(frm_add, width=5, bg="#f9f7f0")
-        self.e_init.grid(row=1, column=4)
+        self.e_name = ttk.Entry(frm_add, width=15)
+        self.e_hp = ttk.Entry(frm_add, width=5)
+        self.e_ac = ttk.Entry(frm_add, width=5)
+        self.e_status = ttk.Entry(frm_add, width=10)
+        self.e_init = ttk.Entry(frm_add, width=5)
+        for idx, w in enumerate([self.e_name, self.e_hp, self.e_ac, self.e_status, self.e_init]):
+            w.grid(row=1, column=idx)
 
-        # Boutons
-        b_roll = tk.Button(frm_add, text="🎲 Roll Init", command=self.roll_init, bg="#c9c2b8")
+        b_roll = ttk.Button(frm_add, text="🎲 Roll Init", command=self.roll_init)
         b_roll.grid(row=1, column=5, padx=5)
-        Tooltip(b_roll, "Jette 1d20 + mod DEX si fourni")
-        b_add = tk.Button(frm_add, text="➕ Ajouter", command=self.add_entity, bg="#c9c2b8")
-        b_add.grid(row=1, column=6, padx=5)
-        Tooltip(b_add, "Ajoute entité au tracker")
+        Tooltip(b_roll, "Jette l'initiative via le système (1d20+mod)")
 
-        # Affichage du tracker
-        frm_list = tk.Frame(self, bg="#e6e2d3")
+        b_add = ttk.Button(frm_add, text="➕ Ajouter", command=self.add_entity)
+        b_add.grid(row=1, column=6, padx=5)
+        Tooltip(b_add, "Ajoute l'entité au tracker")
+
+        frm_list = ttk.Frame(self)
         frm_list.pack(fill="both", expand=True, padx=10, pady=10)
-        titlebar = tk.Label(frm_list, text="Init  |  Nom            |  PV  |  CA  |  État  | CR",
-                            font=("Georgia", 10, "bold"), bg="#d6d1c4", anchor="w")
+        titlebar = ttk.Label(
+            frm_list,
+            text="Init  |  Nom            |  PV  |  CA  |  État  | CR",
+            font=("Georgia", 10, "bold"), anchor="w"
+        )
         titlebar.pack(fill="x")
 
-        self.lst = tk.Listbox(frm_list, font=("Consolas", 12), bg="#fefcf5")
+        self.lst = tk.Listbox(frm_list, font=("Consolas", 12))
         self.lst.pack(side="left", fill="both", expand=True)
         self.lst.bind('<Double-1>', self.edit_selected)
-        sb = tk.Scrollbar(frm_list, orient='vertical', command=self.lst.yview)
+        sb = ttk.Scrollbar(frm_list, orient='vertical', command=self.lst.yview)
         sb.pack(side='right', fill='y')
         self.lst.config(yscrollcommand=sb.set)
 
-        # Contrôles bas
-        frm_ctrl = tk.Frame(self, bg="#e6e2d3")
+        frm_ctrl = ttk.Frame(self)
         frm_ctrl.pack(fill='x', pady=5)
         for text, cmd in [
             ("🗑️ Suppr", self.delete_entity),
@@ -115,18 +93,19 @@ class InitiativeTracker(tk.Frame):
             ("➖ Dégâts", self.apply_damage),
             ("➕ Soins", self.apply_heal)
         ]:
-            btn = tk.Button(frm_ctrl, text=text, command=cmd, bg="#c9c2b8")
+            btn = ttk.Button(frm_ctrl, text=text, command=cmd)
             btn.pack(side='left', padx=5)
 
     def roll_init(self):
+        ent = self._read_entry(raw=True)
+        if not ent or not self.system:
+            self.e_init.delete(0, tk.END)
+            return
+        init_val = self.system.initiative(ent)
         self.e_init.delete(0, tk.END)
-        try:
-            m = int(self.e_init.get())
-        except ValueError:
-            m = 0
-        self.e_init.insert(0, str(random.randint(1, 20) + m))
+        self.e_init.insert(0, str(init_val))
 
-    def _read_entry(self):
+    def _read_entry(self, raw=False):
         try:
             name = self.e_name.get().strip()
             hp = int(self.e_hp.get())
@@ -138,25 +117,26 @@ class InitiativeTracker(tk.Frame):
             init = int(self.e_init.get())
         except ValueError:
             init = 0
-        return {"name": name, "hp": hp, "ac": ac, "status": status, "init": init}
-
-    def add_entity(self):
-        """Ajoute une nouvelle entité (PJ)."""
-        ent = self._read_entry()
-        if not ent:
-            return
+        ent = {"name": name, "hp": hp, "ac": ac, "status": status, "init": init}
+        if raw:
+            return ent
         ent.update({
             "icon": "🧑‍💼",
             "is_monster": False,
             "challenge_rating": "0",
             "dex_mod": 0
         })
+        return ent
+
+    def add_entity(self):
+        ent = self._read_entry()
+        if not ent:
+            return
         self.entities.append(ent)
         self.clear_entries()
         self.refresh()
 
     def add_entity_obj(self, entity):
-        """Importe une entité (monstre ou PJ) depuis un dict externe."""
         entity.setdefault("icon", "🐉" if entity.get("is_monster") else "🧑‍💼")
         entity.setdefault("status", "")
         entity.setdefault("init", 0)
@@ -174,12 +154,11 @@ class InitiativeTracker(tk.Frame):
 
     def roll_selected(self):
         sel = self.lst.curselection()
-        if not sel:
+        if not sel or not self.system:
             return
         idx = sel[0]
         ent = self.entities[idx]
-        dex = ent.get('dex_mod', 0)
-        ent['init'] = random.randint(1, 20) + dex
+        ent["init"] = self.system.initiative(ent)
         self.refresh()
 
     def apply_damage(self):
@@ -216,18 +195,16 @@ class InitiativeTracker(tk.Frame):
         if field == 'status':
             dlg = tk.Toplevel(self)
             dlg.title("Choisir état")
-            tk.Label(dlg, text="État:").pack(padx=10, pady=5)
+            ttk.Label(dlg, text="État:").pack(padx=10, pady=5)
             var = tk.StringVar(value=ent['status'])
-            combo = ttk.Combobox(dlg, textvariable=var, values=DND_STATES, state='readonly')
+            combo = ttk.Combobox(dlg, textvariable=var, values=[], state='readonly')
             combo.pack(padx=10, pady=5)
             def on_ok():
                 ent['status'] = var.get()
                 dlg.destroy()
                 self.refresh()
-            tk.Button(dlg, text="OK", command=on_ok).pack(pady=5)
-            dlg.transient(self)
-            dlg.grab_set()
-            self.wait_window(dlg)
+            ttk.Button(dlg, text="OK", command=on_ok).pack(pady=5)
+            dlg.transient(self); dlg.grab_set(); self.wait_window(dlg)
             return
         if field in ('hp','init'):
             val = simpledialog.askinteger("Modifier", f"Nouvelle valeur {field}:", initialvalue=ent[field], minvalue=0)
@@ -245,7 +222,6 @@ class InitiativeTracker(tk.Frame):
             w.delete(0, tk.END)
 
     def refresh(self):
-        # Tri par initiative décroissante
         self.entities.sort(key=lambda e: e.get('init', 0), reverse=True)
         self.lst.delete(0, tk.END)
         for i, e in enumerate(self.entities):
@@ -259,4 +235,3 @@ class InitiativeTracker(tk.Frame):
             self.lst.insert(tk.END, line)
             if e['hp'] < 1:
                 self.lst.itemconfig(i, fg='red')
-

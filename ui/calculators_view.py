@@ -5,11 +5,14 @@ from ui.travel_calculator import TravelCalculator
 from ui.xp_calculator import XPCombatCalculator
 
 class CalculatorsView(ttk.Frame):
-    def __init__(self, parent, tracker=None):
+    def __init__(self, parent, tracker=None, system=None, party_view=None, characters_dir="data/characters"):
         super().__init__(parent)
         self.tracker = tracker
+        self.system = system
+        self.party_view = party_view
+        self.characters_dir = characters_dir
 
-        # Création d'un notebook interne pour les sous-onglets des calculateurs
+        # Notebook interne pour les calculateurs
         self.tabs = ttk.Notebook(self)
         self.tabs.pack(fill="both", expand=True, padx=10, pady=10)
 
@@ -27,6 +30,12 @@ class CalculatorsView(ttk.Frame):
 
         # Onglet XP Combat
         frame_xp = ttk.Frame(self.tabs)
-        self.xp_calculator = XPCombatCalculator(frame_xp, tracker=self.tracker)
+        self.xp_calculator = XPCombatCalculator(
+            frame_xp,
+            tracker=self.tracker,
+            characters_dir=self.characters_dir,
+            party_view=self.party_view,
+            system=self.system
+        )
         self.xp_calculator.pack(fill="both", expand=True)
         self.tabs.add(frame_xp, text="🏆 XP Combat")

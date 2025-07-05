@@ -2,97 +2,108 @@ import os
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 from tkinter.scrolledtext import ScrolledText
-
-NOTES_DIR = os.path.join("data", "notes")
+from theme import setup_styles
 
 class NotesView(ttk.Frame):
-    def __init__(self, parent):
-        super().__init__(parent)
-        self.current_file = None
+    """
+    Gestionnaire de notes pour un système générique.
+    """
+    def __init__(self, parent, system=None, **kwargs):
+        """
+        :param system: instance de GameSystem pour personnaliser le dossier
+        """
+        setup_styles()
+        super().__init__(parent, style="Custom.TFrame", **kwargs)
+        self.system = system
+        base = system.name() if system else "dnd5e"
+        self.notes_dir = os.path.join("data", base, "notes")
+        os.makedirs(self.notes_dir, exist_ok=True)
 
-        os.makedirs(NOTES_DIR, exist_ok=True)
-
-        # Layout principal : colonne gauche + éditeur
+        # Layout: liste à gauche, éditeur à droite
         self.columnconfigure(1, weight=1)
         self.rowconfigure(0, weight=1)
 
-        # Colonne de gauche : liste des fichiers
-        left_frame = ttk.Frame(self)
+        # Liste des notes
+        left_frame = ttk.Frame(self, style="Custom.TFrame")
         left_frame.grid(row=0, column=0, sticky="ns")
+        ttk.Label(left_frame, text="📝 Notes", style="Custom.TLabel").pack(pady=5)
+        self.listbox = tk.Listbox(
+            left_frame, bg="#f9f7f0", fg="#5c4d3d", font=("Consolas",11)
+        )
+        self.listbox.pack(fill="y", expand=True)
+        self.listbox.bind("<<ListboxSelect>>", self.load_selected_note)
+        btn_frame = ttk.Frame(left_frame, style="Custom.TFrame")
+        btn_frame.pack(fill="x", pady=5)
+        ttk.Button(btn_frame, text="➕ Nouvelle note", command=self.new_note, style="Custom.TButton").pack(fill="x", pady=2)
+        ttk.Button(btn_frame, text="🗑️ Supprimer", command=self.delete_note, style="Custom.TButton").pack(fill="x", pady=2)
 
-        self.notes_listbox = tk.Listbox(left_frame, width=25)
-        self.notes_listbox.pack(fill="y", expand=True)
-        self.notes_listbox.bind("<<ListboxSelect>>", self.load_selected_note)
+        # Éditeur
+        editor = ttk.Frame(self, style="Custom.TFrame")
+        editor.grid(row=0, column=1, sticky="nsew")
+        self.text = ScrolledText(
+            editor, bg="#f9f7f0", fg="#5c4d3d", font=("Consolas",11), wrap="word", relief='flat'
+        )
+        self.text.pack(fill="both", expand=True, padx=5, pady=5)
+        ttk.Button(editor, text="💾 Sauvegarder", command=self.save_note, style="Custom.TButton").pack(anchor="e", padx=5, pady=5)
 
-        ttk.Button(left_frame, text="➕ Nouvelle note", command=self.new_note).pack(fill="x")
-        ttk.Button(left_frame, text="🗑️ Supprimer", command=self.delete_note).pack(fill="x")
+        self.current_file = None
+        self.refresh_list()
 
-        # Zone d’édition
-        editor_frame = ttk.Frame(self)
-        editor_frame.grid(row=0, column=1, sticky="nsew")
-
-        self.text = ScrolledText(editor_frame, wrap="word", font=("Consolas", 11))
-        self.text.pack(fill="both", expand=True)
-
-        # Sauvegarde
-        ttk.Button(editor_frame, text="💾 Sauvegarder", command=self.save_note).pack(anchor="e", padx=5, pady=5)
-
-        self.refresh_note_list()
-
-    def refresh_note_list(self):
-        self.notes_listbox.delete(0, tk.END)
-        for filename in sorted(os.listdir(NOTES_DIR)):
-            if filename.endswith(".md"):
-                self.notes_listbox.insert(tk.END, filename)
+    def refresh_list(self):
+        """Recharge la liste des fichiers de notes"""
+        self.listbox.delete(0, tk.END)
+        for fname in sorted(os.listdir(self.notes_dir)):
+            if fname.endswith('.md'):
+                self.listbox.insert(tk.END, fname)
 
     def load_selected_note(self, event=None):
-        selection = self.notes_listbox.curselection()
-        if not selection:
+        """Charge la note sélectionnée dans l'éditeur"""
+        sel = self.listbox.curselection()
+        if not sel:
             return
-        filename = self.notes_listbox.get(selection[0])
-        file_path = os.path.join(NOTES_DIR, filename)
-        with open(file_path, "r", encoding="utf-8") as f:
+        fname = self.listbox.get(sel[0])
+        path = os.path.join(self.notes_dir, fname)
+        with open(path, 'r', encoding='utf-8') as f:
             content = f.read()
-        self.current_file = file_path
-        self.text.delete(1.0, tk.END)
+        self.current_file = path
+        self.text.delete('1.0', tk.END)
         self.text.insert(tk.END, content)
 
     def new_note(self):
-        name = filedialog.asksaveasfilename(
-            defaultextension=".md",
-            filetypes=[("Markdown files", "*.md")],
-            initialdir=NOTES_DIR,
-            title="Créer une nouvelle note"
+        """Crée une nouvelle note via un fichier Markdown"""
+        path = filedialog.asksaveasfilename(
+            defaultextension='.md', initialdir=self.notes_dir,
+            initialfile='NewNote.md', filetypes=[('Markdown','*.md')]
         )
-        if name:
-            with open(name, "w", encoding="utf-8") as f:
-                f.write("# Nouvelle note\n\n")
-            self.refresh_note_list()
-            self.current_file = name
-            self.load_note_from_path(name)
-
-    def load_note_from_path(self, path):
-        with open(path, "r", encoding="utf-8") as f:
-            content = f.read()
-        self.text.delete(1.0, tk.END)
-        self.text.insert(tk.END, content)
+        if not path:
+            return
+        with open(path, 'w', encoding='utf-8') as f:
+            f.write('# Nouvelle note\n\n')
+        self.refresh_list()
+        self.current_file = path
+        self.text.delete('1.0', tk.END)
+        self.text.insert(tk.END, '# Nouvelle note\n\n')
 
     def save_note(self):
-        if self.current_file:
-            with open(self.current_file, "w", encoding="utf-8") as f:
-                f.write(self.text.get(1.0, tk.END))
-            messagebox.showinfo("Note sauvegardée", f"{os.path.basename(self.current_file)} sauvegardée.")
-        else:
-            messagebox.showwarning("Pas de fichier", "Aucune note sélectionnée pour la sauvegarde.")
+        """Sauvegarde le contenu de l'éditeur dans le fichier courant"""
+        if not self.current_file:
+            messagebox.showwarning('Pas de fichier', 'Aucune note sélectionnée.')
+            return
+        with open(self.current_file, 'w', encoding='utf-8') as f:
+            f.write(self.text.get('1.0', tk.END))
+        messagebox.showinfo('Note sauvegardée', os.path.basename(self.current_file))
+        self.refresh_list()
 
     def delete_note(self):
-        selection = self.notes_listbox.curselection()
-        if not selection:
+        """Supprime le fichier de note sélectionné"""
+        sel = self.listbox.curselection()
+        if not sel:
             return
-        filename = self.notes_listbox.get(selection[0])
-        file_path = os.path.join(NOTES_DIR, filename)
-        if messagebox.askyesno("Confirmation", f"Supprimer {filename} ?"):
-            os.remove(file_path)
-            self.refresh_note_list()
-            self.text.delete(1.0, tk.END)
-            self.current_file = None
+        fname = self.listbox.get(sel[0])
+        path = os.path.join(self.notes_dir, fname)
+        if not messagebox.askyesno('Supprimer', f'Supprimer {fname} ?'):
+            return
+        os.remove(path)
+        self.current_file = None
+        self.text.delete('1.0', tk.END)
+        self.refresh_list()
