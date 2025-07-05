@@ -4,7 +4,7 @@ import tkinter as tk
 from tkinter import ttk
 from systems.dnd5e import DnD5eSystem
 # Importer d'autres systèmes si disponibles
-# from systems.starfinder import StarfinderSystem
+from systems.starfinder import StarfinderSystem
 # from systems.shadowrun import ShadowrunSystem
 
 from ui.initiative_tracker import InitiativeTracker
@@ -108,7 +108,7 @@ if __name__ == '__main__':
     # Instancier les systèmes de jeu disponibles
     systems = {
         "D&D 5e": DnD5eSystem(),
-        # "Starfinder": StarfinderSystem(),
+        "Starfinder": StarfinderSystem(),
         # "Shadowrun": ShadowrunSystem(),
     }
     app = MainApp(systems)
